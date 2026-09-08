@@ -14,7 +14,7 @@ links:
   github: https://github.com/Lakelong/ZULONEX-Saas
   deployment: http://localhost:5173
 paths:
-  local: /Users/longwei/Documents/Airething/孵化品牌/ZULONEX/总部管理/管理后台原型
+  local: /Users/longwei/Documents/GitHub/Airething/孵化品牌/ZULONEX/总部管理/管理后台原型
   documents:
     - README.md
     - PROJECT_CONTEXT.md
