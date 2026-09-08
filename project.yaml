@@ -1,0 +1,28 @@
+schema_version: 1
+id: zulonex-saas
+name: ZULONEX 总部管理后台原型
+portfolio: ZULONEX
+initiative: 总部管理
+status: risk
+stage: 脱敏体验原型
+next_step: 推送当前成果并继续真实接口与权限核验
+summary: 总部业务后台 Vue3 体验原型及生产接入契约。
+owner: Longwei
+agents:
+  - Codex
+links:
+  github: https://github.com/Lakelong/ZULONEX-Saas
+  deployment: http://localhost:5173
+paths:
+  local: /Users/longwei/Documents/ZULONEX/总部管理/管理后台原型
+  documents:
+    - README.md
+    - PROJECT_CONTEXT.md
+    - PROJECT_STATUS.md
+    - AGENTS.md
+  requirements:
+    - docs
+  decisions:
+    - docs
+attention:
+  - 正式接口、真实权限和生产数据尚未接入

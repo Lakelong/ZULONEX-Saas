@@ -37,8 +37,19 @@ for (const workflow of workflowApiContracts) {
 }
 
 const appSource = await readFile(resolve(root, 'src/App.vue'), 'utf8')
-if (appSource.includes('ordersSeed') || appSource.includes('deliverySeed')) {
-  blockers.push('正式页面仍直接加载模拟业务数据')
+const previewSeeds = [
+  'ordersSeed',
+  'deliverySeed',
+  'partnerSeed',
+  'purchaseSeed',
+  'settlementSeed',
+  'transactionSplitSeed',
+  'workbenchTasks',
+  'roleStats'
+]
+const remainingSeeds = previewSeeds.filter((seed) => appSource.includes(seed))
+if (remainingSeeds.length) {
+  blockers.push(`正式页面仍直接加载模拟业务数据：${remainingSeeds.join('、')}`)
 }
 
 if (!appSource.includes('runtimeMode.isPreview')) {
@@ -52,4 +63,3 @@ if (blockers.length) {
 }
 
 console.log('正式环境部署检查通过')
-

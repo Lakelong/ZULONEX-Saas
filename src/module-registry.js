@@ -1282,6 +1282,66 @@ const scheduleRows = [
     conflict: '已解决',
     createdBy: '交付二组',
     status: '已确认'
+  },
+  {
+    id: 'schedule-3',
+    scheduleNo: 'PK2606290011',
+    student: '赵**',
+    course: '初中数学正式课',
+    teacher: '周老师',
+    className: '初三数学 A 班',
+    scheduledAt: '06-29 19:00',
+    duration: '90 分钟',
+    classroom: '腾讯会议 62****09',
+    deliveryCenter: '总部交付中心',
+    conflict: '无冲突',
+    createdBy: '交付一组',
+    status: '待上课'
+  },
+  {
+    id: 'schedule-4',
+    scheduleNo: 'PK2606300008',
+    student: '刘**',
+    course: '高中英语体验课',
+    teacher: '陈老师',
+    className: '线上一对一',
+    scheduledAt: '06-30 20:00',
+    duration: '45 分钟',
+    classroom: '腾讯会议 71****36',
+    deliveryCenter: '华东交付中心',
+    conflict: '无冲突',
+    createdBy: '交付二组',
+    status: '待上课'
+  },
+  {
+    id: 'schedule-5',
+    scheduleNo: 'PK2607010015',
+    student: '周**',
+    course: '小学语文正式课',
+    teacher: '苏老师',
+    className: '小升初冲刺班',
+    scheduledAt: '07-01 16:00',
+    duration: '90 分钟',
+    classroom: '腾讯会议 25****18',
+    deliveryCenter: '华东交付中心',
+    conflict: '无冲突',
+    createdBy: '交付二组',
+    status: '已确认'
+  },
+  {
+    id: 'schedule-6',
+    scheduleNo: 'PK2607020026',
+    student: '张**',
+    course: '初中英语体验课',
+    teacher: '王老师',
+    className: '线上一对一',
+    scheduledAt: '07-02 10:00',
+    duration: '45 分钟',
+    classroom: '腾讯会议 39****41',
+    deliveryCenter: '总部交付中心',
+    conflict: '冲突待处理',
+    createdBy: '交付一组',
+    status: '时间冲突'
   }
 ]
 

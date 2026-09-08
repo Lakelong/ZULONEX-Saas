@@ -10,10 +10,11 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "check:prototype": "node scripts/check-prototype-readiness.mjs",
     "check:business": "node scripts/verify-business-contract.mjs",
     "check:production": "node scripts/check-production-readiness.mjs",
     "build:production": "npm run check:business && npm run check:production && vite build --mode production",
-    "test": "npm run check:business && npm run build"
+    "test": "npm run check:prototype && npm run check:business && npm run build"
   },
   "dependencies": {
     "@lucide/vue": "^1.21.0",

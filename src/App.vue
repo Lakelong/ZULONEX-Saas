@@ -463,7 +463,7 @@
               </label>
               <label>
                 <span>下单时间</span>
-                <input v-model="orderFilterState.orderTime" type="text" placeholder="请选择下单时间" readonly />
+                <input v-model="orderFilterState.orderTime" type="date" aria-label="下单日期" />
               </label>
               <div class="filter-actions">
                 <button class="button ghost" type="button" @click="resetOrderFilters">
@@ -586,7 +586,12 @@
                 <Filter :size="17" />
                 筛选
               </button>
-              <button class="button secondary" type="button" @click="toast('已切换到日历排课视图')">
+              <button
+                class="button secondary"
+                type="button"
+                :class="{ active: deliveryCalendarMode }"
+                @click="deliveryCalendarMode = !deliveryCalendarMode"
+              >
                 <CalendarDays :size="17" />
                 日历视图
               </button>
@@ -604,34 +609,45 @@
             <div v-if="filtersOpen" class="filter-panel">
               <label>
                 <span>课程阶段</span>
-                <select>
-                  <option>全部阶段</option>
-                  <option>体验课</option>
-                  <option>正式课</option>
+                <select v-model="deliveryFilterState.stage">
+                  <option value="">全部阶段</option>
+                  <option value="体验课">体验课</option>
+                  <option value="正式课">正式课</option>
                 </select>
               </label>
               <label>
                 <span>学科</span>
-                <select>
-                  <option>全部学科</option>
-                  <option>数学</option>
-                  <option>英语</option>
-                  <option>语文</option>
-                  <option>物理</option>
+                <select v-model="deliveryFilterState.subject">
+                  <option value="">全部学科</option>
+                  <option value="数学">数学</option>
+                  <option value="英语">英语</option>
+                  <option value="语文">语文</option>
+                  <option value="物理">物理</option>
                 </select>
               </label>
               <label>
                 <span>负责人</span>
-                <select>
-                  <option>全部负责人</option>
-                  <option>交付一组</option>
-                  <option>交付二组</option>
+                <select v-model="deliveryFilterState.owner">
+                  <option value="">全部负责人</option>
+                  <option value="交付一组">交付一组</option>
+                  <option value="交付二组">交付二组</option>
+                  <option value="周老师">周老师</option>
+                  <option value="苏老师">苏老师</option>
                 </select>
               </label>
               <div class="filter-actions">
-                <button class="button ghost" type="button" @click="toast('筛选条件已重置')"><RotateCcw :size="16" />重置</button>
+                <button class="button ghost" type="button" @click="resetDeliveryFilters"><RotateCcw :size="16" />重置</button>
                 <button class="button primary" type="button" @click="filtersOpen = false; toast('筛选已应用')">应用筛选</button>
               </div>
+            </div>
+
+            <div v-if="deliveryCalendarMode" class="schedule-board" aria-label="排课日历视图">
+              <article v-for="item in filteredDelivery" :key="`calendar-${item.id}`">
+                <span>{{ item.preferredTime }}</span>
+                <strong>{{ item.studentName || item.student }} · {{ item.subject }}</strong>
+                <small>{{ item.teacherName }} / {{ item.deliveryCenter }}</small>
+                <em :class="`status-${statusTone(item.status)}`">{{ item.status }}</em>
+              </article>
             </div>
 
             <div class="table-wrap">
@@ -709,9 +725,10 @@
                 <Search :size="18" />
                 <input v-model="listSearch" type="search" placeholder="搜索采购单、订单、学员、供应商或商品" />
               </div>
-              <button class="button secondary" type="button" @click="toast('采购筛选面板已打开')">
+              <button class="button secondary" type="button" :class="{ active: purchaseFiltersOpen }" @click="purchaseFiltersOpen = !purchaseFiltersOpen">
                 <Filter :size="17" />
                 筛选
+                <span v-if="purchaseActiveFilterCount" class="filter-count">{{ purchaseActiveFilterCount }}</span>
               </button>
               <button
                 class="button secondary"
@@ -722,6 +739,39 @@
                 <Download :size="17" />
                 导出
               </button>
+            </div>
+
+            <div v-if="purchaseFiltersOpen" class="filter-panel">
+              <label>
+                <span>采购类型</span>
+                <select v-model="purchaseFilterState.purchaseType">
+                  <option value="">全部采购类型</option>
+                  <option value="线上采购单">线上采购单</option>
+                  <option value="线下采购单">线下采购单</option>
+                  <option value="采购退供">采购退供</option>
+                </select>
+              </label>
+              <label>
+                <span>付款状态</span>
+                <select v-model="purchaseFilterState.paymentStatus">
+                  <option value="">全部付款状态</option>
+                  <option value="已付款">已付款</option>
+                  <option value="待补凭证">待补凭证</option>
+                  <option value="退款中">退款中</option>
+                </select>
+              </label>
+              <label>
+                <span>供应商</span>
+                <input v-model="purchaseFilterState.supplier" type="search" placeholder="请输入供应商" />
+              </label>
+              <label>
+                <span>预计到货</span>
+                <input v-model="purchaseFilterState.expectedAt" type="date" aria-label="预计到货日期" />
+              </label>
+              <div class="filter-actions">
+                <button class="button ghost" type="button" @click="resetPurchaseFilters"><RotateCcw :size="16" />重置</button>
+                <button class="button primary" type="button" @click="purchaseFiltersOpen = false; toast('筛选已应用')">应用筛选</button>
+              </div>
             </div>
 
             <div class="table-wrap">
@@ -1116,6 +1166,16 @@
                 <Download v-if="action === '导出'" :size="17" />
                 {{ action }}
               </button>
+              <div v-if="isScheduleRegistry" class="segmented-control view-switcher" role="tablist" aria-label="排课视图">
+                <button type="button" :class="{ active: registryScheduleView === 'calendar' }" @click="registryScheduleView = 'calendar'">
+                  <CalendarDays :size="15" />
+                  周历
+                </button>
+                <button type="button" :class="{ active: registryScheduleView === 'table' }" @click="registryScheduleView = 'table'">
+                  <Columns3 :size="15" />
+                  明细
+                </button>
+              </div>
               <div class="registry-column-picker">
                 <button
                   class="button secondary icon-only"
@@ -1176,7 +1236,64 @@
               <small v-else>路由已核验 · 字段、动作和权限等待线上逐项核验</small>
             </div>
 
-            <div v-if="currentRegistryContract" class="table-wrap">
+            <div v-if="currentRegistryContract && isScheduleRegistry && registryScheduleView === 'calendar'" class="registry-schedule-calendar">
+              <div class="calendar-toolbar">
+                <div>
+                  <span>周排课</span>
+                  <strong>{{ scheduleWeekRangeLabel }}</strong>
+                </div>
+                <div class="calendar-actions">
+                  <button class="button secondary" type="button" @click="shiftScheduleWeek(-1)">上一周</button>
+                  <button class="button secondary" type="button" @click="shiftScheduleWeek(0)">本周</button>
+                  <button class="button secondary" type="button" @click="shiftScheduleWeek(1)">下一周</button>
+                </div>
+              </div>
+              <div class="teacher-lane-tabs" role="list" aria-label="教师筛选">
+                <button
+                  v-for="teacher in scheduleTeachers"
+                  :key="teacher"
+                  type="button"
+                  :class="{ active: selectedScheduleTeacher === teacher }"
+                  @click="selectedScheduleTeacher = teacher"
+                >
+                  {{ teacher }}
+                </button>
+              </div>
+              <div class="week-calendar-grid">
+                <div class="time-axis">
+                  <span></span>
+                  <strong v-for="slot in scheduleTimeSlots" :key="slot">{{ slot }}</strong>
+                </div>
+                <section v-for="day in scheduleWeekDays" :key="day.iso">
+                  <header :class="{ today: day.isToday }">
+                    <span>{{ day.weekday }}</span>
+                    <strong>{{ day.label }}</strong>
+                  </header>
+                  <div class="day-slots">
+                    <article
+                      v-for="slot in scheduleTimeSlots"
+                      :key="`${day.iso}-${slot}`"
+                      :class="{ occupied: scheduleItemsForSlot(day.iso, slot).length }"
+                    >
+                      <button
+                        v-for="item in scheduleItemsForSlot(day.iso, slot)"
+                        :key="item.id"
+                        type="button"
+                        class="schedule-event"
+                        :class="`status-${statusTone(item.status)}`"
+                        @click="openRegistryRecord(item)"
+                      >
+                        <strong>{{ item.classStart }} {{ item.studentOrClass || item.studentName || item.scheduleTitle }}</strong>
+                        <span>{{ item.teacherName }} · {{ item.subjectProduct || item.courseName }}</span>
+                        <small>{{ item.deliveryCenter }} / {{ item.status }}</small>
+                      </button>
+                    </article>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div v-if="currentRegistryContract && (!isScheduleRegistry || registryScheduleView === 'table')" class="table-wrap">
               <table
                 class="data-table registry-table"
                 :style="{ minWidth: `${Math.max(visibleRegistryColumns.length * 142 + 280, 980)}px` }"
@@ -1829,9 +1946,16 @@
                       :placeholder="field.placeholder"
                     ></textarea>
                     <input
+                      v-else-if="field.type === 'file'"
+                      type="file"
+                      :class="{ invalid: partnerFormErrors[field.key] }"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      @change="partnerForm[field.key] = $event.target.files?.[0]?.name || ''"
+                    />
+                    <input
                       v-else
                       v-model="partnerForm[field.key]"
-                      type="text"
+                      :type="partnerFieldInputType(field)"
                       :class="{ invalid: partnerFormErrors[field.key] }"
                       :placeholder="field.placeholder"
                     />
@@ -1881,7 +2005,7 @@
                   <input
                     v-else
                     v-model="registryForm[column.key]"
-                    type="text"
+                    :type="registryInputType(column)"
                     :class="{ invalid: registryFormErrors[column.key] }"
                     :placeholder="`请输入${column.label}`"
                   />
@@ -2257,7 +2381,7 @@ const partnerApplicationFields = [
   {
     title: '基础信息',
     fields: [
-      { key: 'mobile', label: '手机号', required: true, placeholder: '请输入手机号' },
+      { key: 'mobile', label: '手机号', type: 'tel', required: true, placeholder: '请输入手机号' },
       { key: 'contact', label: '姓名', required: true, placeholder: '请输入姓名' },
       { key: 'idCardNo', label: '身份证号', placeholder: '请输入身份证号' },
       { key: 'status', label: '状态', type: 'select', options: ['启用', '停用', '草稿', '待初审', '待补充', '复审中', '已通过'], required: true },
@@ -2271,7 +2395,7 @@ const partnerApplicationFields = [
     title: '业务配置',
     fields: [
       { key: 'hainanDealer', label: '是否海南经销商(39万)', type: 'select', options: ['否', '是'] },
-      { key: 'contactMobile', label: '联系人电话', required: true, placeholder: '请输入联系人电话' },
+      { key: 'contactMobile', label: '联系人电话', type: 'tel', required: true, placeholder: '请输入联系人电话' },
       { key: 'plannerRequirement', label: '是否需要规划师', type: 'select', options: ['需要', '不需要', '手动选择'], required: true },
       { key: 'wechatNoticeMobiles', label: '微信通知手机号', placeholder: '多个手机号用逗号或空格分隔' },
       { key: 'deliveryCenter', label: '交付中心', placeholder: '请选择交付中心' },
@@ -2284,8 +2408,8 @@ const partnerApplicationFields = [
       { key: 'investmentCompany', label: '招商公司', placeholder: '请选择招商公司' },
       { key: 'referrerCompany', label: '推荐人公司', placeholder: '请选择推荐人公司' },
       { key: 'parentInfo', label: '上级信息', placeholder: '请输入上级信息' },
-      { key: 'contractStart', label: '合约开始日期', required: true, placeholder: '开始日期' },
-      { key: 'contractEnd', label: '合约结束日期', required: true, placeholder: '结束日期' },
+      { key: 'contractStart', label: '合约开始日期', type: 'date', required: true, placeholder: '开始日期' },
+      { key: 'contractEnd', label: '合约结束日期', type: 'date', required: true, placeholder: '结束日期' },
       { key: 'unionpayAccount', label: '银联B2B资管账号', placeholder: '请输入银联B2B资管账号' }
     ]
   },
@@ -2293,9 +2417,9 @@ const partnerApplicationFields = [
     title: '资料附件',
     fields: [
       { key: 'licenseNo', label: '营业执照号', required: true, placeholder: '请输入营业执照号' },
-      { key: 'licenseExpiresAt', label: '证照有效期', required: true, placeholder: 'YYYY-MM-DD' },
-      { key: 'businessLicenseFile', label: '营业执照', required: true, placeholder: '上传文件名称或编号' },
-      { key: 'contractAttachment', label: '合同附件', placeholder: '上传文件名称或编号' },
+      { key: 'licenseExpiresAt', label: '证照有效期', type: 'date', required: true, placeholder: 'YYYY-MM-DD' },
+      { key: 'businessLicenseFile', label: '营业执照', type: 'file', required: true, placeholder: '上传文件名称或编号' },
+      { key: 'contractAttachment', label: '合同附件', type: 'file', placeholder: '上传文件名称或编号' },
       { key: 'remark', label: '备注', type: 'textarea', placeholder: '请输入备注' }
     ]
   }
@@ -2322,6 +2446,10 @@ const globalSearch = ref('')
 const listSearch = ref('')
 const filtersOpen = ref(false)
 const orderFilterState = ref(createDefaultOrderFilters())
+const deliveryFilterState = ref(createDefaultDeliveryFilters())
+const deliveryCalendarMode = ref(false)
+const purchaseFiltersOpen = ref(false)
+const purchaseFilterState = ref(createDefaultPurchaseFilters())
 const selectedRows = ref([])
 const activeRegistrySubmodule = ref('')
 const registrySearch = ref('')
@@ -2330,6 +2458,9 @@ const registryStatus = ref('全部状态')
 const registryFilterValues = ref({})
 const registryFieldPanelOpen = ref(false)
 const hiddenRegistryColumns = ref([])
+const registryScheduleView = ref('calendar')
+const scheduleWeekOffset = ref(0)
+const selectedScheduleTeacher = ref('全部教师')
 const registryDatasets = ref(createRegistryDatasets())
 const registryEditMode = ref(false)
 const registryForm = ref({})
@@ -2515,6 +2646,7 @@ const filteredOrders = computed(() => {
     if (filters.studentName && !order.studentName.includes(filters.studentName.trim())) return false
     if (filters.allocationStatus && order.allocationStatus !== filters.allocationStatus) return false
     if (filters.hasPad && order.hasPad !== filters.hasPad) return false
+    if (filters.orderTime && !String(order.orderTime || '').startsWith(filters.orderTime)) return false
     if (activeOrderTab.value === 'payment') return order.status === '待支付'
     if (activeOrderTab.value === 'delivery') {
       return order.status === '已支付' && order.allocationStatus === '已分配' && order.afterSaleStatus === '--'
@@ -2536,12 +2668,20 @@ const orderActiveFilterCount = computed(() =>
   Object.values(orderFilterState.value).filter((value) => String(value).trim()).length
 )
 
+const purchaseActiveFilterCount = computed(() =>
+  Object.values(purchaseFilterState.value).filter((value) => String(value).trim()).length
+)
+
 const filteredDelivery = computed(() => {
   const query = listSearch.value.trim().toLowerCase()
   return deliveryItems.value.filter((item) => {
     const matchesQuery = !query || `${item.student}${item.mobile}${item.subject}${item.grade}`.toLowerCase().includes(query)
     if (!matchesQuery) return false
     if (!matchesActiveScope('delivery', item)) return false
+    const filters = deliveryFilterState.value
+    if (filters.stage && item.stage !== filters.stage) return false
+    if (filters.subject && item.subject !== filters.subject) return false
+    if (filters.owner && item.owner !== filters.owner && item.teacherName !== filters.owner) return false
     if (activeDeliveryTab.value === 'pending') return ['待分配', '时间冲突'].includes(item.status)
     if (activeDeliveryTab.value === 'schedule') return item.status === '待排课'
     if (activeDeliveryTab.value === 'active') return ['交付中', '待评价'].includes(item.status)
@@ -2560,6 +2700,11 @@ const filteredPurchases = computed(() => {
         .includes(query)
     if (!matchesQuery) return false
     if (!matchesActiveScope('purchase', item)) return false
+    const filters = purchaseFilterState.value
+    if (filters.purchaseType && item.purchaseType !== filters.purchaseType) return false
+    if (filters.paymentStatus && item.paymentStatus !== filters.paymentStatus) return false
+    if (filters.supplier && !item.supplier.includes(filters.supplier.trim())) return false
+    if (filters.expectedAt && normalizeShortDate(item.expectedAt) !== normalizeShortDate(filters.expectedAt)) return false
     if (activePurchaseTab.value === 'payment') return item.status === '待付款' || item.paymentStatus.includes('待')
     if (activePurchaseTab.value === 'logistics') return ['待发货', '运输中'].includes(item.status)
     if (activePurchaseTab.value === 'refund') return item.purchaseType.includes('退供') || item.status.includes('退供')
@@ -2630,6 +2775,62 @@ const filteredRegistryRows = computed(() => {
       })
       return matchesQuery && matchesScope && matchesFilters
     })
+})
+
+const scheduleSubmodules = ['体验课排课', '教师排课', '排课记录']
+const isScheduleRegistry = computed(
+  () => currentRegistryModule.value?.key === 'learning' && scheduleSubmodules.includes(activeRegistrySubmodule.value)
+)
+
+const scheduleRows = computed(() =>
+  filteredRegistryRows.value.map((row) => normalizeScheduleRecord(row)).filter((row) => row.classDate && row.classStart)
+)
+
+const scheduleTeachers = computed(() => {
+  const teachers = [...new Set(scheduleRows.value.map((row) => row.teacherName).filter(Boolean))]
+  return ['全部教师', ...teachers]
+})
+
+const scheduleAnchorDate = computed(() => {
+  const dates = scheduleRows.value.map((row) => row.classDate).filter(Boolean).sort()
+  return dates[Math.floor(dates.length / 2)] || '2026-06-28'
+})
+
+const scheduleWeekDays = computed(() => {
+  const anchor = parseLocalDate(scheduleAnchorDate.value)
+  anchor.setDate(anchor.getDate() + scheduleWeekOffset.value * 7)
+  const monday = startOfWeek(anchor)
+  const todayIso = formatIsoDate(new Date())
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + index)
+    return {
+      iso: formatIsoDate(date),
+      weekday: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][index],
+      label: `${date.getMonth() + 1}/${date.getDate()}`,
+      isToday: formatIsoDate(date) === todayIso
+    }
+  })
+})
+
+const scheduleWeekRangeLabel = computed(() => {
+  const days = scheduleWeekDays.value
+  if (!days.length) return '--'
+  return `${days[0].label} - ${days[6].label}`
+})
+
+const scheduleTimeSlots = computed(() => {
+  const starts = scheduleRows.value.map((row) => row.classStart).filter(Boolean).sort()
+  return [...new Set(['09:00', '10:00', '14:00', '16:00', '19:00', '20:00', ...starts])].sort()
+})
+
+const visibleScheduleRows = computed(() => {
+  const weekDaySet = new Set(scheduleWeekDays.value.map((day) => day.iso))
+  return scheduleRows.value.filter((row) => {
+    if (!weekDaySet.has(row.classDate)) return false
+    if (selectedScheduleTeacher.value !== '全部教师' && row.teacherName !== selectedScheduleTeacher.value) return false
+    return true
+  })
 })
 
 const globalResults = computed(() => {
@@ -3127,6 +3328,9 @@ watch(activeRegistrySubmodule, () => {
   registryFilterValues.value = {}
   registryFieldPanelOpen.value = false
   hiddenRegistryColumns.value = []
+  registryScheduleView.value = isScheduleRegistry.value ? 'calendar' : 'table'
+  scheduleWeekOffset.value = 0
+  selectedScheduleTeacher.value = '全部教师'
 })
 
 function metricIconFor(metric) {
@@ -4068,9 +4272,111 @@ function createDefaultOrderFilters() {
   }
 }
 
+function createDefaultDeliveryFilters() {
+  return {
+    stage: '',
+    subject: '',
+    owner: ''
+  }
+}
+
+function createDefaultPurchaseFilters() {
+  return {
+    purchaseType: '',
+    paymentStatus: '',
+    supplier: '',
+    expectedAt: ''
+  }
+}
+
 function resetOrderFilters() {
   orderFilterState.value = createDefaultOrderFilters()
   toast('订单筛选条件已重置')
+}
+
+function resetDeliveryFilters() {
+  deliveryFilterState.value = createDefaultDeliveryFilters()
+  toast('交付筛选条件已重置')
+}
+
+function resetPurchaseFilters() {
+  purchaseFilterState.value = createDefaultPurchaseFilters()
+  toast('采购筛选条件已重置')
+}
+
+function normalizeShortDate(value) {
+  const text = String(value || '').trim()
+  if (!text || text.includes('待')) return text
+  const dateMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (dateMatch) return `${dateMatch[2]}-${dateMatch[3]}`
+  return text
+}
+
+function normalizeScheduleRecord(record) {
+  const scheduledMatch = String(record.scheduledAt || '').match(/(?:(\d{4})-)?(\d{2})-(\d{2})\s+(\d{2}:\d{2})/)
+  const fallbackDate = scheduledMatch
+    ? `${scheduledMatch[1] || '2026'}-${scheduledMatch[2]}-${scheduledMatch[3]}`
+    : record.classDate
+  const fallbackStart = scheduledMatch?.[4] || record.classStart
+  return {
+    ...record,
+    scheduleTitle: record.scheduleTitle || `${record.studentOrClass || record.student || record.studentName || '学员'}-${record.course || record.courseName || '课程'}`,
+    studentOrClass: record.studentOrClass || record.student || record.studentName,
+    teacherName: record.teacherName || record.teacher,
+    subjectProduct: record.subjectProduct || record.course,
+    courseName: record.courseName || record.course,
+    classDate: record.classDate || fallbackDate,
+    classStart: record.classStart || fallbackStart,
+    classEnd: record.classEnd || inferClassEnd(fallbackStart, record.duration)
+  }
+}
+
+function inferClassEnd(start, duration) {
+  if (!start) return '--'
+  const [hour, minute] = start.split(':').map(Number)
+  const durationMinutes = Number(String(duration || '').match(/\d+/)?.[0] || 45)
+  const date = new Date(2026, 0, 1, hour, minute + durationMinutes)
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function parseLocalDate(value) {
+  const [year, month, day] = String(value || '').split('-').map(Number)
+  if (!year || !month || !day) return new Date()
+  return new Date(year, month - 1, day)
+}
+
+function formatIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function startOfWeek(date) {
+  const result = new Date(date)
+  const day = result.getDay() || 7
+  result.setDate(result.getDate() - day + 1)
+  return result
+}
+
+function shiftScheduleWeek(direction) {
+  scheduleWeekOffset.value = direction === 0 ? 0 : scheduleWeekOffset.value + direction
+}
+
+function scheduleItemsForSlot(dayIso, slot) {
+  return visibleScheduleRows.value.filter((row) => row.classDate === dayIso && row.classStart === slot)
+}
+
+function partnerFieldInputType(field) {
+  if (field.type === 'date') return 'date'
+  if (field.type === 'tel' || field.key.toLowerCase().includes('mobile')) return 'tel'
+  return 'text'
+}
+
+function registryInputType(column) {
+  const label = column.label || ''
+  if (['classDate', 'createdAt', 'updatedAt', 'submittedAt', 'contractStart', 'contractEnd', 'licenseExpiresAt'].includes(column.key)) return 'date'
+  if (label.includes('日期') || label.includes('有效期')) return 'date'
+  if (label.includes('手机号') || label.includes('电话')) return 'tel'
+  if (label.includes('金额') || label.includes('数量') || label.includes('课时')) return 'number'
+  return 'text'
 }
 
 function createEmptyWorkflowForm() {

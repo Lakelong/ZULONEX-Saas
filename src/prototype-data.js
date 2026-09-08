@@ -1051,7 +1051,7 @@ export const settlementSeed = [
   {
     id: 'settle-4',
     billNo: 'JS2606270015',
-    partner: '华南交付中心',
+    partner: '总部交付中心',
     period: '06/13 - 06/19',
     businessAmount: '¥ 168,200',
     receivableAmount: '¥ 0',
@@ -1065,7 +1065,7 @@ export const settlementSeed = [
     createdAt: '06-20 08:00',
     relatedOrders: '64',
     status: '已完成',
-    history: [{ time: '06-21 16:20', title: '打款完成', detail: '已完成华南交付中心周结算' }]
+    history: [{ time: '06-21 16:20', title: '打款完成', detail: '已完成总部交付中心周结算' }]
   }
 ]
 

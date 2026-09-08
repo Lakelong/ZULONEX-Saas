@@ -323,6 +323,11 @@ for (const split of transactionSplitSeed) {
   if (split.settlementBills.length > 0) {
     for (const billNo of split.settlementBills) {
       assert(settlementBillsByNo.has(billNo), `分账流水 ${split.id} 关联了不存在的结算单 ${billNo}`)
+      const bill = settlementsByNo.get(billNo)
+      assert(
+        !bill || [split.partner, split.deliveryCenter, '总部直营'].includes(bill.partner),
+        `分账流水 ${split.id} 结算单 ${billNo} 归属“${bill?.partner}”与商家或交付中心不一致`
+      )
     }
   }
 
@@ -331,6 +336,7 @@ for (const split of transactionSplitSeed) {
   }
 
   if (split.transferCheck === '已完成') {
+    assert(split.settlementBills.length > 0, `分账流水 ${split.id} 标记打款完成但缺少结算单`)
     assert(
       split.settlementBills.every((billNo) => settlementsByNo.get(billNo)?.status === '已完成'),
       `分账流水 ${split.id} 标记打款完成但存在未完成结算单`
@@ -482,7 +488,8 @@ assert(appSource.includes("渠道统计: '/channelReport/summary'"), '营销中�
 assert(appSource.includes("应用管理: '/system/application'"), '系统管理页面未接入契约门禁')
 assert(!appSource.includes('v-for="n in 5"'), '系统设置仍在展示未经核验的虚假权限矩阵')
 assert(
-  appSource.includes('v-if="currentRegistryContract" class="table-wrap"'),
+  appSource.includes('currentRegistryContract && isScheduleRegistry') &&
+    appSource.includes("currentRegistryContract && (!isScheduleRegistry || registryScheduleView === 'table')"),
   '未核验台账没有被业务契约门禁保护'
 )
 for (const action of ['撤销', '评价信息', '去评价', '消课', '回退预占课时']) {
